@@ -21,7 +21,7 @@ RMQ_QUEUE = env.str('RMQ_QUEUE', default=f'{APP_NAME}:cmd')
 RMQ_URL_QUERY_PARAMS = env.str('RMQ_URL_QUERY_PARAMS', default='')
 RMQ_URL = f"amqp://{RMQ_USER}:{RMQ_PASSWORD}@{RMQ_HOST}:{RMQ_PORT}/?{RMQ_URL_QUERY_PARAMS}"
 
-CPU_LIMITER = env.int('CPU_LIMITER', default=0)
+CPU_LIMITER = env.int('CPU_LIMITER', default=None)
 NETWORK_TYPE = env.str('NETWORK_TYPE')
 
 BBOX = Bbox(env.float('BBOX_NORTH'), env.float('BBOX_SOUTH'),

@@ -26,6 +26,27 @@ def split_coordinates(points_coordinates: List[Sequence[float]]) -> List[List[fl
     return [x_coordinates, y_coordinates]
 
 
+def prepare_nodes(nodes: list):
+    """
+    Составление списка нод для построения маршрута
+    :param nodes: список всех нод
+    :return: список нод в формате [[от 0, от 1, ...], [к 1, к 2, ...]]
+    """
+    if len(nodes) == 2:
+        return nodes
+
+    orig = [nodes[0]]
+    dest = []
+
+    for node in nodes[1:-1]:
+        dest.append(node)
+        orig.append(node)
+
+    dest.append(nodes[-1])
+
+    return [orig, dest]
+
+
 def get_map_html(route_map: folium.Map) -> str:
     """
     Получение HTML карты

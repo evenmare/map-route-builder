@@ -47,6 +47,6 @@ async def test_listener_with_builder(disable_osmnx_cache, disable_osmnx_logs,
     response_body = consumer.process_message.call_args[0][0]
 
     assert isinstance(response_body['paths'], list)
-    assert isinstance(response_body['length'], int)
-    assert isinstance(response_body['travel_time'], int)
+    assert isinstance(response_body['length'], float)
+    assert isinstance(response_body['travel_time'], float)
     assert isinstance(response_body['map'], str) if 'with_map' in request_body else response_body['map'] is None

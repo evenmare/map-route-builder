@@ -32,7 +32,8 @@ def test_graph_builder(disable_osmnx_cache, disable_osmnx_logs, network_type: st
 @pytest.mark.geo
 @pytest.mark.parametrize('network_type, coordinates, extra_params',
                          [('drive', [(55.97999, 37.18581), (55.97863, 37.18954)], {'with_map': True}),
-                          ('walk', [(55.97999, 37.18581), (55.98006, 37.18981), (55.97863, 37.18954)], {})])
+                          ('walk', [(55.97999, 37.18581), (55.98006, 37.18981), (55.97863, 37.18954)], {}),
+                          ('drive', [(55.97999, 37.18581), (55.97863, 37.18954)], {'optimizer': 'travel_time'})])
 def test_route_builder(disable_osmnx_cache, disable_osmnx_logs, network_type, coordinates, extra_params):
     """ Проверка построителя маршрута """
     graph = _build_graph(network_type)
@@ -40,8 +41,8 @@ def test_route_builder(disable_osmnx_cache, disable_osmnx_logs, network_type, co
     assert isinstance(route, builders.Route)
 
     assert isinstance(route.paths, list)
-    assert isinstance(route.travel_time, int)
-    assert isinstance(route.length, int)
+    assert isinstance(route.travel_time, float)
+    assert isinstance(route.length, float)
     assert isinstance(route.map, str) if extra_params.get('with_map') else route.map is None
 
 

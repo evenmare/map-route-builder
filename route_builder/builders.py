@@ -1,4 +1,4 @@
-from typing import List, Sequence, Literal, Optional, get_args
+from typing import List, Sequence, Literal, Optional, Union, get_args
 from dataclasses import dataclass, astuple
 
 import logging
@@ -11,10 +11,8 @@ import folium
 import settings
 from route_builder import utils
 
-
 logger = logging.getLogger(__name__)
 ox.config(log_console=settings.DEBUG, use_cache=settings.USE_CACHE)
-
 
 NetworkTypesType = Literal['all_private', 'all', 'bike', 'drive', 'drive_service', 'walk']
 NETWORK_TYPES = get_args(NetworkTypesType)
@@ -24,9 +22,9 @@ NETWORK_TYPES = get_args(NetworkTypesType)
 class Route:
     """ Маршрут """
     paths: list
-    length: int
-    travel_time: int
-    map: Optional[folium.Map]
+    length: Optional[float]
+    travel_time: Optional[float]
+    map: Optional[str]
 
 
 class Graph:
@@ -120,21 +118,69 @@ class RouteBuilder:  # pylint: disable=too-few-public-methods
 
         return True
 
+    def build_map(self, route: Union[List[int], List[List[int]]]) -> str:
+        """
+        Построение карты маршрута
+        :param route: маршрут
+        :return: HTML-код карты маршрута
+        """
+        route_map = None
+
+        if route and self.extra_params.get('with_map'):
+            if isinstance(route[0], list):
+                route: List[List[int]]
+                raw_route_map = ox.plot_route_folium(self.graph.graph, route[0], **self.extra_params)
+
+                for route_part in route[1:]:
+                    raw_route_map = ox.plot_route_folium(self.graph.graph, route_part, raw_route_map,
+                                                         **self.extra_params)
+
+            else:
+                route: List[int]
+                raw_route_map = ox.plot_route_folium(self.graph.graph, route, **self.extra_params)
+
+            route_map = utils.get_map_html(raw_route_map)
+
+        return route_map
+
+    def get_sum_route_edge_attributes(self, route: Union[List[int], List[List[int]]], attr_name: str) -> float:
+        """
+        Получение атрибута ребра
+        :param route: маршрут
+        :param attr_name: наименование атрибута
+        :return: сумма атрибута ребра
+        """
+        route_edge_attribute_sum = None
+
+        if route:
+            route_edge_attribute_sum = 0
+
+            if isinstance(route[0], list):
+                route: List[List[int]]
+
+                for route_part in route:
+                    route_edge_attribute_sum += sum(
+                        get_route_edge_attributes(self.graph.graph, route_part, attribute=attr_name))
+            else:
+                route: List[int]
+                route_edge_attribute_sum += sum(get_route_edge_attributes(self.graph.graph, route, attribute=attr_name))
+
+        return route_edge_attribute_sum
+
     def build(self) -> Route:
         """
         Построение маршрута
         :return: маршрут
         """
         graph = self.graph.graph
-        nodes = ox.nearest_nodes(graph, *self.coordinates)
-        route = ox.shortest_path(graph, *nodes)
+        nodes = utils.prepare_nodes(ox.nearest_nodes(graph, *self.coordinates))
+        route = ox.shortest_path(graph, *nodes, self.extra_params.get('optimizer', 'length'), settings.CPU_LIMITER)
 
-        route_map = utils.get_map_html(ox.plot_route_folium(graph, route, **self.extra_params)) \
-            if self.extra_params.get('with_map') else None
+        route_map = self.build_map(route)
+        length = self.get_sum_route_edge_attributes(route, 'length')
+        travel_time = self.get_sum_route_edge_attributes(route, 'travel_time')
 
-        return Route(paths=route,
-                     map=route_map,
-                     **{attr: int(sum(get_route_edge_attributes(graph, route, attr))) for attr in ('length', 'travel_time')})
+        return Route(paths=route, map=route_map, length=length, travel_time=travel_time)
 
 
 def build_route(graph: Graph, **kwargs) -> Route:
