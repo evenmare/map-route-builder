@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 from dataclasses import dataclass
 
 import folium
@@ -11,6 +11,21 @@ class Bbox:
     south: float
     east: float
     west: float
+
+
+@dataclass
+class Route:
+    """ Маршрут """
+    paths: list
+    length: Optional[float]
+    travel_time: Optional[float]
+    map: Optional[str]
+
+
+@dataclass
+class Error:
+    """ Ошибка """
+    error_details: str
 
 
 def split_coordinates(points_coordinates: List[Sequence[float]]) -> List[List[float]]:

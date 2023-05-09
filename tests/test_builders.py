@@ -2,7 +2,7 @@ import pytest
 
 import networkx as nx
 
-from route_builder import builders
+from route_builder import builders, utils
 from route_builder.utils import Bbox
 
 
@@ -38,7 +38,7 @@ def test_route_builder(disable_osmnx_cache, disable_osmnx_logs, network_type, co
     """ Проверка построителя маршрута """
     graph = _build_graph(network_type)
     route = builders.RouteBuilder(graph, coordinates, **extra_params).build()
-    assert isinstance(route, builders.Route)
+    assert isinstance(route, utils.Route)
 
     assert isinstance(route.paths, list)
     assert isinstance(route.travel_time, float)
@@ -54,6 +54,18 @@ def test_route_builder_with_invalid_coordinates(disable_osmnx_cache, disable_osm
         builders.RouteBuilder(graph, [(180.02345, 32.32145), (170.32134, 32.32145)])
 
     assert isinstance(ex.value, ValueError)
+
+
+@pytest.mark.geo
+def test_build_route_exception(mocker, disable_osmnx_cache, disable_osmnx_logs):
+    """ Проверка корректности обработки ошибки при построении маршрута """
+    shortest_path_patcher = mocker.patch('osmnx.shortest_path')
+    shortest_path_patcher.return_value = None
+
+    graph = _build_graph(network_type='drive')
+    result = builders.build_route(graph, **{'points_coordinates': [[55.97999, 37.18581], [55.97863, 37.18954]]})
+
+    assert isinstance(result, utils.Error)
 
 
 def _build_graph(network_type) -> builders.Graph:

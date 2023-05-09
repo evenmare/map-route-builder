@@ -15,9 +15,9 @@ class BaseQueueWorker:
 
     def __init__(self, connection_url: str, routing_key: str, robust: Optional[bool] = True) -> None:
         """
-        :param connection_url:
-        :param routing_key:
-        :param robust:
+        :param connection_url: URL для подключения
+        :param routing_key: ключ route
+        :param robust: robust-подключение?
         """
         self.connection_url = connection_url
         self.routing_key = routing_key

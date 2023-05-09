@@ -1,5 +1,6 @@
+import dataclasses
 from typing import List, Sequence, Literal, Optional, Union, get_args
-from dataclasses import dataclass, astuple
+from dataclasses import astuple
 
 import logging
 
@@ -16,15 +17,6 @@ ox.config(log_console=settings.DEBUG, use_cache=settings.USE_CACHE)
 
 NetworkTypesType = Literal['all_private', 'all', 'bike', 'drive', 'drive_service', 'walk']
 NETWORK_TYPES = get_args(NetworkTypesType)
-
-
-@dataclass
-class Route:
-    """ Маршрут """
-    paths: list
-    length: Optional[float]
-    travel_time: Optional[float]
-    map: Optional[str]
 
 
 class Graph:
@@ -78,7 +70,7 @@ class Graph:
         return self._graph or self.build()
 
 
-class RouteBuilder:  # pylint: disable=too-few-public-methods
+class RouteBuilder:
     """ Построитель маршрута """
     graph: Graph
 
@@ -126,7 +118,7 @@ class RouteBuilder:  # pylint: disable=too-few-public-methods
         """
         route_map = None
 
-        if route and self.extra_params.get('with_map'):
+        if self.extra_params.get('with_map'):
             if isinstance(route[0], list):
                 route: List[List[int]]
                 raw_route_map = ox.plot_route_folium(self.graph.graph, route[0], **self.extra_params)
@@ -150,24 +142,21 @@ class RouteBuilder:  # pylint: disable=too-few-public-methods
         :param attr_name: наименование атрибута
         :return: сумма атрибута ребра
         """
-        route_edge_attribute_sum = None
+        route_edge_attribute_sum = 0
 
-        if route:
-            route_edge_attribute_sum = 0
+        if isinstance(route[0], list):
+            route: List[List[int]]
 
-            if isinstance(route[0], list):
-                route: List[List[int]]
-
-                for route_part in route:
-                    route_edge_attribute_sum += sum(
-                        get_route_edge_attributes(self.graph.graph, route_part, attribute=attr_name))
-            else:
-                route: List[int]
-                route_edge_attribute_sum += sum(get_route_edge_attributes(self.graph.graph, route, attribute=attr_name))
+            for route_part in route:
+                route_edge_attribute_sum += sum(
+                    get_route_edge_attributes(self.graph.graph, route_part, attribute=attr_name))
+        else:
+            route: List[int]
+            route_edge_attribute_sum += sum(get_route_edge_attributes(self.graph.graph, route, attribute=attr_name))
 
         return route_edge_attribute_sum
 
-    def build(self) -> Route:
+    def build(self) -> utils.Route:
         """
         Построение маршрута
         :return: маршрут
@@ -176,19 +165,25 @@ class RouteBuilder:  # pylint: disable=too-few-public-methods
         nodes = utils.prepare_nodes(ox.nearest_nodes(graph, *self.coordinates))
         route = ox.shortest_path(graph, *nodes, self.extra_params.get('optimizer', 'length'), settings.CPU_LIMITER)
 
+        if not route:
+            raise ValueError('Невозможно создать маршрут с текущими входными параметрами')
+
         route_map = self.build_map(route)
         length = self.get_sum_route_edge_attributes(route, 'length')
         travel_time = self.get_sum_route_edge_attributes(route, 'travel_time')
 
-        return Route(paths=route, map=route_map, length=length, travel_time=travel_time)
+        return utils.Route(paths=route, map=route_map, length=length, travel_time=travel_time)
 
 
-def build_route(graph: Graph, **kwargs) -> Route:
+def build_route(graph: Graph, **kwargs) -> dataclasses.dataclass:
     """
     Строительство маршрута
     :param graph: граф для построения маршрута
     :param kwargs: конфигурация маршрута
     :return: маршрут
     """
-    route_builder = RouteBuilder(graph, **kwargs)
-    return route_builder.build()
+    try:
+        route_builder = RouteBuilder(graph, **kwargs)
+        return route_builder.build()
+    except Exception as ex:  # pylint: disable=broad-exception-caught
+        return utils.Error(str(ex))

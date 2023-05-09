@@ -5,7 +5,7 @@ from unittest.mock import ANY
 
 import pytest
 
-from route_builder.builders import Route
+from route_builder.utils import Route, Error
 
 
 REQUESTS = [
@@ -20,10 +20,11 @@ REQUESTS = [
 
 
 @pytest.mark.parametrize('request_body', REQUESTS)
-async def test_listener(mocker, mock_geo, server, publisher, consumer, request_body):
+@pytest.mark.parametrize('builder_return_value', [Route([], 0, 0, None), Error('Одна ошибка и ты ошибся')])
+async def test_listener(mocker, mock_geo, server, publisher, consumer, request_body, builder_return_value):
     """ Проверка rpc-модуля без гео-функциональности """
     route_builder_patcher = mocker.patch('route_builder.builders.build_route')
-    route_builder_patcher.return_value = Route([], 0, 0, None)
+    route_builder_patcher.return_value = builder_return_value
 
     await publisher.publish(request_body)
 
