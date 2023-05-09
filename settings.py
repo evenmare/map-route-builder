@@ -22,7 +22,7 @@ RMQ_URL_QUERY_PARAMS = env.str('RMQ_URL_QUERY_PARAMS', default='')
 RMQ_URL = f"amqp://{RMQ_USER}:{RMQ_PASSWORD}@{RMQ_HOST}:{RMQ_PORT}/?{RMQ_URL_QUERY_PARAMS}"
 
 CPU_LIMITER = env.int('CPU_LIMITER', default=None)
-NETWORK_TYPE = env.str('NETWORK_TYPE')
+NETWORK_TYPE = env.str('NETWORK_TYPE', default='all')
 
-BBOX = Bbox(env.float('BBOX_NORTH'), env.float('BBOX_SOUTH'),
-            env.float('BBOX_EAST'), env.float('BBOX_WEST'))
+BBOX = Bbox(env.float('BBOX_NORTH', default=None), env.float('BBOX_SOUTH', default=None),
+            env.float('BBOX_EAST', default=None), env.float('BBOX_WEST', default=None))
