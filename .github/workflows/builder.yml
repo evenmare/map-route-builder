@@ -36,7 +36,7 @@ jobs:
       env:
         DEBUG: True
         APP_NAME: rpc-route-route_builder
-        RMQ_HOST: rabbitmq
-        RMQ_PORT: 5672
+        RMQ_HOST: localhost
+        RMQ_PORT: ${{ job.services.rabbitmq.ports['5672'] }}
       run: |
         pytest -m "not geo" -vv
