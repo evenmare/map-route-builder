@@ -14,16 +14,16 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+
+    services:
+      rabbitmq:
+        image: rabbitmq:3.11-management-alpine
+        ports:
+          - 5672
 
     steps:
     - uses: actions/checkout@v3
-    - name: Start RabbitMQ
-      uses: Namoshek/rabbitmq-github-action@v1.1.0
-      with:
-        version: '3.8.9'
-        ports: '1883:1883 8883:8883'
     - name: Setup python
       uses: actions/setup-python@v3
       with:
@@ -37,6 +37,6 @@ jobs:
         DEBUG: True
         APP_NAME: rpc-route-route_builder
         RMQ_HOST: rabbitmq
-        RMQ_PORT: 1883
+        RMQ_PORT: 5672
       run: |
         pytest -m "not geo" -vv
